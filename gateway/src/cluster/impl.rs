@@ -82,25 +82,26 @@ impl Cluster {
     /// [`ShardScheme::Auto`]: config/enum.ShardScheme.html#variant.Auto
     /// [configured shard scheme]: config/struct.Config.html#method.shard_scheme
     pub async fn up(&self) -> Result<()> {
-        let [from, to, total] =
-            match self.0.config.shard_scheme() {
-                ShardScheme::Auto => {
-                    let http = self.0.config.http_client();
+        let [from, to, total] = match self.0.config.shard_scheme() {
+            ShardScheme::Auto => {
+                let http = self.0.config.http_client();
 
-                    let gateway = http.gateway().authed().await.map_err(|source| {
-                        Error::GettingGatewayInfo {
-                            source,
-                        }
-                    })?;
+                let gateway = if self.0.config.is_bot() {
+                    http.gateway()
+                        .authed()
+                        .await
+                        .map_err(|source| Error::GettingGatewayInfo { source })?
+                } else {
+                    http.gateway()
+                        .user_authed()
+                        .await
+                        .map_err(|source| Error::GettingGatewayInfo { source })?
+                };
 
-                    [0, gateway.shards - 1, gateway.shards]
-                },
-                ShardScheme::Range {
-                    from,
-                    to,
-                    total,
-                } => [from, to, total],
-            };
+                [0, gateway.shards - 1, gateway.shards]
+            }
+            ShardScheme::Range { from, to, total } => [from, to, total],
+        };
         #[cfg(feature = "metrics")]
         {
             use std::convert::TryInto;
@@ -239,7 +240,7 @@ impl Cluster {
             Err(err) => {
                 warn!("Config creation failed with: {}", err);
                 return None;
-            },
+            }
         };
 
         let shard = Shard::new(config).await.ok()?;

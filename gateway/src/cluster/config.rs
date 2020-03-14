@@ -73,11 +73,7 @@ impl<T: RangeBounds<u64>> TryFrom<(T, u64)> for ShardScheme {
         };
 
         if start > end {
-            return Err(Error::IdTooLarge {
-                end,
-                start,
-                total,
-            });
+            return Err(Error::IdTooLarge { end, start, total });
         }
 
         Ok(Self::Range {
@@ -97,6 +93,7 @@ pub struct Config {
     shard_config: ShardConfig,
     shard_scheme: ShardScheme,
     queue: Arc<Box<dyn Queue>>,
+    is_bot: bool,
 }
 
 impl Config {
@@ -137,6 +134,10 @@ impl Config {
         self.shard_scheme
     }
 
+    pub fn is_bot(&self) -> bool {
+        self.is_bot
+    }
+
     pub fn queue(&self) -> &Arc<Box<dyn Queue>> {
         &self.queue
     }
@@ -170,17 +171,14 @@ impl ConfigBuilder {
         Self::_new(token.into())
     }
 
-    fn _new(mut token: String) -> Self {
-        if !token.starts_with("Bot ") {
-            token.insert_str(0, "Bot ");
-        }
-
+    fn _new(token: String) -> Self {
         Self(
             Config {
                 http_client: Client::new(token.clone()),
                 shard_config: ShardConfig::from(token.clone()),
                 shard_scheme: ShardScheme::Auto,
                 queue: Arc::new(Box::new(LocalQueue::new())),
+                is_bot: token.starts_with("Bot "),
             },
             ShardConfigBuilder::new(token),
         )
@@ -232,11 +230,10 @@ impl ConfigBuilder {
     /// [`ConfigBuilder::large_threshold`]: ../../shard/config/struct.ConfigBuilder.html#method.large_threshold
     /// [`ShardError::LargeThresholdInvalid`]: ../../shard/error/enum.Error.html#variant.LargeThresholdInvalid
     pub fn large_threshold(mut self, large_threshold: u64) -> Result<Self> {
-        self.1 = self.1.large_threshold(large_threshold).map_err(|source| {
-            Error::LargeThresholdInvalid {
-                source,
-            }
-        })?;
+        self.1 = self
+            .1
+            .large_threshold(large_threshold)
+            .map_err(|source| Error::LargeThresholdInvalid { source })?;
 
         Ok(self)
     }

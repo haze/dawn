@@ -99,11 +99,7 @@ impl ConfigBuilder {
         Self::_new(token.into())
     }
 
-    fn _new(mut token: String) -> Self {
-        if !token.starts_with("Bot ") {
-            token.insert_str(0, "Bot ");
-        }
-
+    fn _new(token: String) -> Self {
         Self(Config {
             guild_subscriptions: true,
             http_client: HttpClient::new(token.clone()),
