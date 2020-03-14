@@ -86,19 +86,11 @@ impl Cluster {
             ShardScheme::Auto => {
                 let http = self.0.config.http_client();
 
-                let gateway = if self.0.config.is_bot() {
-                    println!("testing testing here im a bot");
-                    http.gateway()
-                        .authed()
-                        .await
-                        .map_err(|source| Error::GettingGatewayInfo { source })?
-                } else {
-                    println!("not a mothafucking bot");
-                    http.gateway()
-                        .user_authed()
-                        .await
-                        .map_err(|source| Error::GettingGatewayInfo { source })?
-                };
+                let gateway = http
+                    .gateway()
+                    .user_authed()
+                    .await
+                    .map_err(|source| Error::GettingGatewayInfo { source })?;
 
                 [0, gateway.shards - 1, gateway.shards]
             }
