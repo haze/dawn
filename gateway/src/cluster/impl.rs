@@ -85,14 +85,16 @@ impl Cluster {
         let [from, to, total] = match self.0.config.shard_scheme() {
             ShardScheme::Auto => {
                 let http = self.0.config.http_client();
-
-                let gateway = http
-                    .gateway()
-                    .user_authed()
-                    .await
-                    .map_err(|source| Error::GettingGatewayInfo { source })?;
-
-                [0, gateway.shards - 1, gateway.shards]
+                if self.0.config.is_bot() {
+                    let gateway = http
+                        .gateway()
+                        .authed()
+                        .await
+                        .map_err(|source| Error::GettingGatewayInfo { source })?;
+                    [0, gateway.shards - 1, gateway.shards]
+                } else {
+                    [0, 1, 1]
+                }
             }
             ShardScheme::Range { from, to, total } => [from, to, total],
         };

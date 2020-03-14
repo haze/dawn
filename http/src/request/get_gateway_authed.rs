@@ -1,5 +1,5 @@
 use crate::request::prelude::*;
-use dawn_model::gateway::connection_info::BotConnectionInfo;
+use dawn_model::gateway::connection_info::{BotConnectionInfo, ConnectionInfo};
 
 pub struct GetGatewayAuthed<'a> {
     fut: Option<Pending<'a, BotConnectionInfo>>,
@@ -23,7 +23,7 @@ impl<'a> GetGatewayAuthed<'a> {
 poll_req!(GetGatewayAuthed<'_>, BotConnectionInfo);
 
 pub struct GetUserGatewayAuthed<'a> {
-    fut: Option<Pending<'a, BotConnectionInfo>>,
+    fut: Option<Pending<'a, ConnectionInfo>>,
     http: &'a Client,
 }
 
@@ -40,4 +40,4 @@ impl<'a> GetUserGatewayAuthed<'a> {
         Ok(())
     }
 }
-poll_req!(GetUserGatewayAuthed<'_>, BotConnectionInfo);
+poll_req!(GetUserGatewayAuthed<'_>, ConnectionInfo);
